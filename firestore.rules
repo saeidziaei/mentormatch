@@ -1,0 +1,28 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /tutors/{tutorId} {
+      allow read: if true;
+
+      allow create: if request.auth != null
+                 && request.auth.uid == tutorId
+                 && request.resource.data.uid == tutorId
+                 && request.resource.data.status == 'pending';
+
+      allow update: if request.auth != null
+                 && request.auth.uid == tutorId
+                 && request.resource.data.status == 'pending'
+                 && request.resource.data.uid == tutorId;
+
+      allow delete: if false;
+    }
+
+    // TODO: admin approval clause (custom claim) — handled in a follow-up task.
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
