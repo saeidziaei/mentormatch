@@ -67,3 +67,7 @@ node_modules/
 
 # dataconnect generated files
 .dataconnect
+
+# Claude Code local settings & personal notes
+.claude/
+.notes

@@ -7,20 +7,35 @@ import {
   type ReactNode,
 } from "react";
 import {
-  createUserWithEmailAndPassword,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut as fbSignOut,
-  updateProfile,
   type User,
 } from "firebase/auth";
-import { auth } from "../firebase";
+import { httpsCallable } from "firebase/functions";
+import { auth, functions } from "../firebase";
+
+const requestSignupCodeCallable = httpsCallable<
+  { email: string; displayName?: string },
+  { ok: true }
+>(functions, "requestSignupCode");
+
+const verifySignupCodeCallable = httpsCallable<
+  { email: string; code: string; password: string; displayName?: string },
+  { ok: true; uid: string }
+>(functions, "verifySignupCode");
 
 interface AuthCtx {
   user: User | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, displayName?: string) => Promise<void>;
+  requestSignupCode: (email: string, displayName?: string) => Promise<void>;
+  verifySignupAndSignIn: (
+    email: string,
+    code: string,
+    password: string,
+    displayName?: string,
+  ) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -44,11 +59,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async signIn(email, password) {
         await signInWithEmailAndPassword(auth, email, password);
       },
-      async signUp(email, password, displayName) {
-        const cred = await createUserWithEmailAndPassword(auth, email, password);
-        if (displayName) {
-          await updateProfile(cred.user, { displayName });
-        }
+      async requestSignupCode(email, displayName) {
+        await requestSignupCodeCallable({ email, displayName });
+      },
+      async verifySignupAndSignIn(email, code, password, displayName) {
+        await verifySignupCodeCallable({ email, code, password, displayName });
+        await signInWithEmailAndPassword(auth, email, password);
       },
       async signOut() {
         await fbSignOut(auth);

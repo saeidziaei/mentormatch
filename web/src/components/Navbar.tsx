@@ -1,12 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth";
-import {
-  BookIcon,
-  GraduationCapIcon,
-  SearchIcon,
-  UserIcon,
-} from "./icons";
+import { GraduationCapIcon } from "./icons";
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -19,7 +14,7 @@ export default function Navbar() {
   };
 
   return (
-    <header className="w-full border-b border-slate-100 bg-white">
+    <header className="w-full bg-white">
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 md:px-10">
         <Link
           to="/"
@@ -32,35 +27,7 @@ export default function Navbar() {
           </span>
         </Link>
 
-        <ul className="hidden items-center gap-10 md:flex">
-          <li>
-            <Link
-              to="/"
-              className="flex items-center gap-2 text-sm font-medium text-slate-700 transition hover:text-indigo-700"
-            >
-              <SearchIcon className="h-4 w-4" />
-              Find Tutors
-            </Link>
-          </li>
-          <li>
-            <Link
-              to="/"
-              className="flex items-center gap-2 text-sm font-medium text-slate-700 transition hover:text-indigo-700"
-            >
-              <BookIcon className="h-4 w-4" />
-              My Learning
-            </Link>
-          </li>
-        </ul>
-
-        <div className="hidden items-center gap-6 md:flex">
-          <Link
-            to="/tutor/onboard"
-            className="flex items-center gap-2 text-sm font-medium text-slate-700 transition hover:text-indigo-700"
-          >
-            <UserIcon className="h-4 w-4" />
-            Tutor Portal
-          </Link>
+        <div className="hidden items-center gap-3 md:flex">
           {user ? (
             <>
               <span className="text-sm font-medium text-slate-600">
@@ -75,12 +42,20 @@ export default function Navbar() {
               </button>
             </>
           ) : (
-            <Link
-              to="/signin"
-              className="rounded-full bg-violet-500 px-5 py-2 text-sm font-semibold text-white shadow-md shadow-violet-300/50 transition hover:bg-violet-600 active:scale-[0.98]"
-            >
-              Sign In
-            </Link>
+            <>
+              <Link
+                to="/signin"
+                className="rounded-full border border-violet-500 px-5 py-2 text-sm font-semibold text-violet-600 transition hover:bg-violet-50 active:scale-[0.98]"
+              >
+                Sign In
+              </Link>
+              <Link
+                to="/signup"
+                className="rounded-full bg-violet-500 px-5 py-2 text-sm font-semibold text-white shadow-md shadow-violet-300/50 transition hover:bg-violet-600 active:scale-[0.98]"
+              >
+                Sign Up
+              </Link>
+            </>
           )}
         </div>
 
@@ -103,26 +78,8 @@ export default function Navbar() {
       {mobileOpen && (
         <div className="mx-4 mb-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-lg md:hidden">
           <ul className="flex flex-col gap-2 text-sm">
-            <li>
-              <Link to="/" className="flex items-center gap-2 rounded-lg px-3 py-2 font-medium text-slate-700 transition hover:bg-slate-50 hover:text-indigo-700">
-                <SearchIcon className="h-4 w-4" />
-                Find Tutors
-              </Link>
-            </li>
-            <li>
-              <Link to="/" className="flex items-center gap-2 rounded-lg px-3 py-2 font-medium text-slate-700 transition hover:bg-slate-50 hover:text-indigo-700">
-                <BookIcon className="h-4 w-4" />
-                My Learning
-              </Link>
-            </li>
-            <li>
-              <Link to="/tutor/onboard" className="flex items-center gap-2 rounded-lg px-3 py-2 font-medium text-slate-700 transition hover:bg-slate-50 hover:text-indigo-700">
-                <UserIcon className="h-4 w-4" />
-                Tutor Portal
-              </Link>
-            </li>
-            <li className="pt-1">
-              {user ? (
+            {user ? (
+              <li>
                 <button
                   type="button"
                   onClick={handleSignOut}
@@ -130,15 +87,27 @@ export default function Navbar() {
                 >
                   Sign Out
                 </button>
-              ) : (
-                <Link
-                  to="/signin"
-                  className="block w-full rounded-full bg-violet-500 px-5 py-2.5 text-center text-sm font-semibold text-white shadow-md transition hover:bg-violet-600"
-                >
-                  Sign In
-                </Link>
-              )}
-            </li>
+              </li>
+            ) : (
+              <>
+                <li>
+                  <Link
+                    to="/signin"
+                    className="block w-full rounded-full border border-violet-500 px-5 py-2.5 text-center text-sm font-semibold text-violet-600 transition hover:bg-violet-50"
+                  >
+                    Sign In
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/signup"
+                    className="block w-full rounded-full bg-violet-500 px-5 py-2.5 text-center text-sm font-semibold text-white shadow-md transition hover:bg-violet-600"
+                  >
+                    Sign Up
+                  </Link>
+                </li>
+              </>
+            )}
           </ul>
         </div>
       )}
