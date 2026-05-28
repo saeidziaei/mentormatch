@@ -3,6 +3,8 @@ import Home from "./pages/Home";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import TutorOnboard from "./pages/TutorOnboard";
+import FindTutor from "./pages/FindTutor";
+import TutorProfile from "./pages/TutorProfile";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import RequireAuth from "./components/RequireAuth";
@@ -19,6 +21,8 @@ export default function App() {
       <Route path="/" element={<Home />} />
       <Route path="/signin" element={<SignIn />} />
       <Route path="/signup" element={<SignUp />} />
+      <Route path="/find-a-tutor" element={<FindTutor />} />
+      <Route path="/tutors/:uid" element={<TutorProfile />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route

@@ -1,98 +1,34 @@
-import { useRef } from "react";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { httpsCallable } from "firebase/functions";
+import { functions } from "../firebase";
 import { ArrowRightIcon, ChevronLeftIcon, ChevronRightIcon } from "./icons";
-import TutorCard, { type Tutor } from "./TutorCard";
+import TutorCard, { TutorCardSkeleton } from "./TutorCard";
+import type { PublicTutor } from "../lib/tutors";
+import { useRef } from "react";
 
-const featuredTutors: Tutor[] = [
-  {
-    id: "serah-m",
-    name: "Serah M.",
-    photoUrl:
-      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=240&h=240&fit=crop&crop=faces",
-    rating: 4.9,
-    reviews: 32,
-    subject: "Maths",
-    yearLevels: "Years 7–12",
-    tags: [
-      { label: "Confidence Building", tone: "violet" },
-      { label: "Exam Stress Support", tone: "amber" },
-    ],
-    hourlyRate: 75,
-    availability: "Online & In-Person",
-  },
-  {
-    id: "daniel-k",
-    name: "Daniel K.",
-    photoUrl:
-      "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=240&h=240&fit=crop&crop=faces",
-    rating: 4.8,
-    reviews: 22,
-    subject: "English",
-    yearLevels: "Years 5–12",
-    tags: [
-      { label: "Study Skills Support", tone: "emerald" },
-      { label: "Patient Teaching", tone: "violet" },
-    ],
-    hourlyRate: 60,
-    availability: "Online Only",
-  },
-  {
-    id: "jessica-l",
-    name: "Jessica L.",
-    photoUrl:
-      "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=240&h=240&fit=crop&crop=faces",
-    rating: 4.9,
-    reviews: 45,
-    subject: "Science",
-    yearLevels: "Years 7–12",
-    tags: [
-      { label: "Confidence Building", tone: "violet" },
-      { label: "Exam Prep Specialist", tone: "amber" },
-    ],
-    hourlyRate: 70,
-    availability: "Online & In-Person",
-  },
-  {
-    id: "michael-t",
-    name: "Michael T.",
-    photoUrl:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=240&h=240&fit=crop&crop=faces",
-    rating: 4.7,
-    reviews: 19,
-    subject: "Physics",
-    yearLevels: "Years 10–12",
-    tags: [
-      { label: "Study Skills Support", tone: "emerald" },
-      { label: "Patient Teaching", tone: "violet" },
-    ],
-    hourlyRate: 80,
-    availability: "Online Only",
-  },
-  {
-    id: "olivia-p",
-    name: "Olivia P.",
-    photoUrl:
-      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=240&h=240&fit=crop&crop=faces",
-    rating: 4.9,
-    reviews: 37,
-    subject: "History",
-    yearLevels: "Years 7–12",
-    tags: [
-      { label: "Confidence Building", tone: "violet" },
-      { label: "Beginner Friendly", tone: "amber" },
-    ],
-    hourlyRate: 65,
-    availability: "Online & In-Person",
-  },
-];
+const searchTutorsFn = httpsCallable<
+  Record<string, never>,
+  { tutors: PublicTutor[] }
+>(functions, "searchTutors");
 
 export default function TutorsCarousel() {
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const [tutors, setTutors] = useState<PublicTutor[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    searchTutorsFn({})
+      .then((res) => setTutors(res.data.tutors.slice(0, 8)))
+      .catch(() => {/* silently hide the section */})
+      .finally(() => setLoading(false));
+  }, []);
 
   const scrollBy = (dir: 1 | -1) => {
-    const el = scrollerRef.current;
-    if (!el) return;
-    el.scrollBy({ left: dir * 320, behavior: "smooth" });
+    scrollerRef.current?.scrollBy({ left: dir * 304, behavior: "smooth" });
   };
+
+  if (!loading && tutors.length === 0) return null;
 
   return (
     <section className="bg-slate-50 px-6 pb-16 md:px-10 md:pb-20">
@@ -103,17 +39,17 @@ export default function TutorsCarousel() {
               Meet Our Top Tutors
             </h2>
             <p className="mt-2 max-w-xl text-sm text-slate-600">
-              Carefully vetted tutors helping students achieve their goals
-              with confidence.
+              Carefully vetted tutors helping students achieve their goals with
+              confidence.
             </p>
           </div>
-          <a
-            href="#tutors"
+          <Link
+            to="/find-a-tutor"
             className="hidden items-center gap-1.5 text-sm font-semibold text-violet-600 transition hover:text-violet-700 sm:inline-flex"
           >
             View all tutors
             <ArrowRightIcon className="h-4 w-4" />
-          </a>
+          </Link>
         </div>
 
         <div className="relative mt-8">
@@ -138,11 +74,17 @@ export default function TutorsCarousel() {
             ref={scrollerRef}
             className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
           >
-            {featuredTutors.map((tutor) => (
-              <div key={tutor.id} className="snap-start">
-                <TutorCard tutor={tutor} />
-              </div>
-            ))}
+            {loading
+              ? Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="w-72 shrink-0 snap-start">
+                    <TutorCardSkeleton />
+                  </div>
+                ))
+              : tutors.map((tutor) => (
+                  <div key={tutor.uid} className="w-72 shrink-0 snap-start">
+                    <TutorCard tutor={tutor} />
+                  </div>
+                ))}
           </div>
         </div>
       </div>

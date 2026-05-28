@@ -1,6 +1,6 @@
 import {onCall} from "firebase-functions/v2/https";
 
-export {upsertTutorProfile, getMyTutorProfile} from "./tutors";
+export {upsertTutorProfile, getMyTutorProfile, searchTutors, getTutorProfile} from "./tutors";
 export {requestSignupCode, verifySignupCode} from "./emailVerification";
 export {sendPasswordReset} from "./passwordReset";
 export {claimAdminRole, grantAdminRole, listPendingTutors, reviewTutor} from "./admin";

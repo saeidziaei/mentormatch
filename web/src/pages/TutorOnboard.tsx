@@ -42,6 +42,9 @@ interface ServerProfile {
   bio: string;
   photoURL: string;
   courses: string[];
+  hourlyRate: number;
+  teachingMode: "online" | "in-person" | "both";
+  suburb: string | null;
   availability: Availability;
   status: "pending" | "approved" | "rejected";
   createdAt: string | null;
@@ -60,12 +63,19 @@ const defaultAvailability: Availability = {
 };
 
 const upsertProfileCallable = httpsCallable<
-  { firstName: string; lastName: string; bio: string; photoURL: string; courses: string[]; availability: Availability },
+  {
+    firstName: string;
+    lastName: string;
+    bio: string;
+    photoURL: string;
+    courses: string[];
+    hourlyRate: number;
+    teachingMode: "online" | "in-person" | "both";
+    suburb?: string;
+    availability: Availability;
+  },
   { ok: true; status: string; created: boolean }
->(
-  functions,
-  "upsertTutorProfile",
-);
+>(functions, "upsertTutorProfile");
 const getMyProfileCallable = httpsCallable<unknown, { profile: ServerProfile | null }>(
   functions,
   "getMyTutorProfile",
@@ -87,6 +97,10 @@ export default function TutorOnboard() {
   const [courses, setCourses] = useState<string[]>([]);
   const [availability, setAvailability] = useState<Availability>(defaultAvailability);
 
+  const [hourlyRate, setHourlyRate] = useState<number>(60);
+  const [teachingMode, setTeachingMode] = useState<"online" | "in-person" | "both">("both");
+  const [suburb, setSuburb] = useState("");
+
   const [status, setStatus] = useState<ServerProfile["status"] | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -106,6 +120,9 @@ export default function TutorOnboard() {
           setBio(profile.bio);
           setPhotoURL(profile.photoURL);
           setCourses(profile.courses);
+          setHourlyRate(profile.hourlyRate ?? 60);
+          setTeachingMode(profile.teachingMode ?? "both");
+          setSuburb(profile.suburb ?? "");
           setAvailability(profile.availability);
           setStatus(profile.status);
         }
@@ -176,6 +193,10 @@ export default function TutorOnboard() {
       setError("Pick at least one course you teach.");
       return;
     }
+    if (!hourlyRate || hourlyRate < 20 || hourlyRate > 200) {
+      setError("Hourly rate must be between $20 and $200.");
+      return;
+    }
     const anyDay = DAYS.some((d) => availability[d].enabled);
     if (!anyDay) {
       setError("Select at least one day of availability.");
@@ -210,6 +231,9 @@ export default function TutorOnboard() {
         bio: bio.trim(),
         photoURL: finalPhotoURL,
         courses,
+        hourlyRate,
+        teachingMode,
+        suburb: suburb.trim() || undefined,
         availability,
       });
 
@@ -345,7 +369,84 @@ export default function TutorOnboard() {
                 </div>
               </section>
 
-              {/* Courses you teach */}              <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm md:p-8">
+              {/* Teaching details */}
+              <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm md:p-8">
+                <div className="border-l-[3px] border-violet-500 pl-3">
+                  <h2 className="font-display text-xl font-semibold text-slate-900">
+                    Teaching details
+                  </h2>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    How you teach, where, and what you charge per hour.
+                  </p>
+                </div>
+
+                <div className="mt-5 grid grid-cols-2 gap-4">
+                  {/* Hourly rate */}
+                  <div>
+                    <label className={labelClass}>
+                      Hourly rate (AUD)
+                      <div className="relative mt-2">
+                        <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
+                          $
+                        </span>
+                        <input
+                          type="number"
+                          min={20}
+                          max={200}
+                          step={5}
+                          required
+                          value={hourlyRate}
+                          onChange={(e) => setHourlyRate(Number(e.target.value))}
+                          className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-7 pr-4 text-sm text-slate-900 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+                        />
+                      </div>
+                    </label>
+                  </div>
+
+                  {/* Suburb */}
+                  <label className={labelClass}>
+                    Suburb (optional)
+                    <input
+                      type="text"
+                      value={suburb}
+                      onChange={(e) => setSuburb(e.target.value)}
+                      placeholder="e.g. Bondi, Parramatta"
+                      maxLength={50}
+                      className={inputClass}
+                    />
+                  </label>
+                </div>
+
+                {/* Teaching mode */}
+                <div className="mt-5">
+                  <p className={labelClass}>Teaching mode</p>
+                  <div className="mt-2 grid grid-cols-3 gap-2">
+                    {(
+                      [
+                        { value: "online", label: "Online only" },
+                        { value: "in-person", label: "In-person only" },
+                        { value: "both", label: "Online & in-person" },
+                      ] as { value: "online" | "in-person" | "both"; label: string }[]
+                    ).map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setTeachingMode(opt.value)}
+                        className={`rounded-xl border px-3 py-2.5 text-xs font-semibold transition ${
+                          teachingMode === opt.value
+                            ? "border-violet-500 bg-violet-600 text-white"
+                            : "border-slate-200 bg-white text-slate-600 hover:border-violet-200 hover:bg-violet-50"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </section>
+
+              {/* Courses you teach */}
+              <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm md:p-8">
 
                 <div className="flex items-start justify-between gap-4">
                   <div className="border-l-[3px] border-violet-500 pl-3">

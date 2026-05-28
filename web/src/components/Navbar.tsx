@@ -28,6 +28,12 @@ export default function Navbar() {
         </Link>
 
         <div className="hidden items-center gap-3 md:flex">
+          <Link
+            to="/find-a-tutor"
+            className="text-sm font-semibold text-slate-600 transition hover:text-violet-600"
+          >
+            Find a Tutor
+          </Link>
           {user ? (
             <>
               <span className="text-sm font-medium text-slate-600">
