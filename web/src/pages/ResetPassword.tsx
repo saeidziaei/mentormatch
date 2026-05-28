@@ -1,0 +1,130 @@
+import { useState, type FormEvent } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { confirmPasswordReset } from "firebase/auth";
+import { auth } from "../firebase";
+import Navbar from "../components/Navbar";
+import PageBackground from "../components/PageBackground";
+import { SparkleIcon } from "../components/icons";
+
+export default function ResetPassword() {
+  const [searchParams] = useSearchParams();
+  const oobCode = searchParams.get("oobCode") ?? "";
+
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+
+  const onSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (password !== confirm) {
+      setError("Passwords don't match.");
+      return;
+    }
+    setError(null);
+    setSubmitting(true);
+    try {
+      await confirmPasswordReset(auth, oobCode, password);
+      setDone(true);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Couldn't reset your password. The link may have expired.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="flex min-h-screen w-full flex-col bg-white font-body text-slate-900">
+      <Navbar />
+      <PageBackground>
+        <div className="mx-auto flex max-w-md flex-col px-6 py-16 md:py-24">
+          <div className="inline-flex w-fit items-center gap-2 rounded-full border border-violet-300/40 bg-white/5 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-violet-200 backdrop-blur-sm">
+            <SparkleIcon className="h-3.5 w-3.5 text-violet-300" />
+            <span>New Password</span>
+          </div>
+          <h1 className="mt-6 font-display text-4xl font-bold leading-[1.1] tracking-tight text-white md:text-5xl">
+            Choose a new <span className="italic text-violet-300">password</span>.
+          </h1>
+
+          {!oobCode ? (
+            <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.06] p-6 shadow-2xl backdrop-blur-sm">
+              <p className="rounded-lg border border-red-400/40 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+                This reset link is invalid or has already been used.
+              </p>
+              <p className="mt-4 text-center text-xs text-white/60">
+                <Link
+                  to="/forgot-password"
+                  className="font-semibold text-violet-300 hover:text-violet-200"
+                >
+                  Request a new link
+                </Link>
+              </p>
+            </div>
+          ) : done ? (
+            <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.06] p-6 shadow-2xl backdrop-blur-sm">
+              <p className="rounded-lg border border-green-400/40 bg-green-500/10 px-3 py-3 text-sm text-green-200">
+                Your password has been updated. You can now sign in.
+              </p>
+              <p className="mt-4 text-center text-xs text-white/60">
+                <Link
+                  to="/signin"
+                  className="font-semibold text-violet-300 hover:text-violet-200"
+                >
+                  ← Sign in
+                </Link>
+              </p>
+            </div>
+          ) : (
+            <form
+              onSubmit={onSubmit}
+              className="mt-8 rounded-2xl border border-white/10 bg-white/[0.06] p-6 shadow-2xl backdrop-blur-sm"
+            >
+              <label className="block text-xs font-semibold uppercase tracking-wider text-white/70">
+                New password
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="mt-2 w-full rounded-lg border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none transition focus:border-violet-400/60 focus:bg-white/10"
+                />
+              </label>
+
+              <label className="mt-4 block text-xs font-semibold uppercase tracking-wider text-white/70">
+                Confirm password
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                  className="mt-2 w-full rounded-lg border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none transition focus:border-violet-400/60 focus:bg-white/10"
+                />
+              </label>
+
+              {error && (
+                <p className="mt-4 rounded-lg border border-red-400/40 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+                  {error}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={submitting}
+                className="mt-6 w-full rounded-full bg-violet-500 px-6 py-3 text-sm font-semibold text-white shadow-xl shadow-violet-900/40 ring-1 ring-violet-400/30 transition hover:bg-violet-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {submitting ? "Updating…" : "Set new password"}
+              </button>
+            </form>
+          )}
+        </div>
+      </PageBackground>
+    </div>
+  );
+}

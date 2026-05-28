@@ -1,7 +1,7 @@
 import {onCall, HttpsError} from "firebase-functions/v2/https";
 import {z} from "zod";
 import {FieldValue, Timestamp} from "firebase-admin/firestore";
-import {db} from "./firebaseAdmin";
+import {db, admin} from "./firebaseAdmin";
 import {COURSE_IDS} from "./courses";
 
 const REGION = "australia-southeast1";
@@ -17,7 +17,8 @@ const daySchema = z.object({
 });
 
 const profileSchema = z.object({
-  displayName: z.string().trim().min(2).max(80),
+  firstName: z.string().trim().min(1).max(50),
+  lastName: z.string().trim().min(1).max(50),
   bio: z.string().trim().min(50).max(600),
   photoURL: z.string().url(),
   courses: z.array(z.string()).min(1).max(20),
@@ -44,6 +45,7 @@ export const upsertTutorProfile = onCall({region: REGION}, async (req) => {
     throw new HttpsError("invalid-argument", msg);
   }
   const data = parsed.data;
+  const fullName = `${data.firstName} ${data.lastName}`;
 
   for (const id of data.courses) {
     if (!COURSE_IDS.has(id)) {
@@ -60,7 +62,8 @@ export const upsertTutorProfile = onCall({region: REGION}, async (req) => {
 
   await ref.set({
     uid,
-    displayName: data.displayName,
+    firstName: data.firstName,
+    lastName: data.lastName,
     bio: data.bio,
     photoURL: data.photoURL,
     courses: data.courses,
@@ -69,6 +72,8 @@ export const upsertTutorProfile = onCall({region: REGION}, async (req) => {
     updatedAt: FieldValue.serverTimestamp(),
     ...(isCreate ? {createdAt: FieldValue.serverTimestamp()} : {}),
   }, {merge: true});
+
+  await admin.auth().updateUser(uid, {displayName: fullName});
 
   return {ok: true, status: "pending" as const, created: isCreate};
 });

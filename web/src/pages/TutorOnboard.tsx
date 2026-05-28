@@ -37,7 +37,8 @@ const DAY_LABEL: Record<Day, string> = {
 
 interface ServerProfile {
   uid: string;
-  displayName: string;
+  firstName: string;
+  lastName: string;
   bio: string;
   photoURL: string;
   courses: string[];
@@ -58,7 +59,10 @@ const defaultAvailability: Availability = {
   sunday: { ...defaultDay },
 };
 
-const upsertProfileCallable = httpsCallable<unknown, { ok: true; status: string; created: boolean }>(
+const upsertProfileCallable = httpsCallable<
+  { firstName: string; lastName: string; bio: string; photoURL: string; courses: string[]; availability: Availability },
+  { ok: true; status: string; created: boolean }
+>(
   functions,
   "upsertTutorProfile",
 );
@@ -73,9 +77,10 @@ const inputClass =
   "mt-2 w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100";
 
 export default function TutorOnboard() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
 
-  const [displayName, setDisplayName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [bio, setBio] = useState("");
   const [photoURL, setPhotoURL] = useState("");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -96,14 +101,13 @@ export default function TutorOnboard() {
         if (cancelled) return;
         const profile = res.data.profile;
         if (profile) {
-          setDisplayName(profile.displayName);
+          setFirstName(profile.firstName ?? "");
+          setLastName(profile.lastName ?? "");
           setBio(profile.bio);
           setPhotoURL(profile.photoURL);
           setCourses(profile.courses);
           setAvailability(profile.availability);
           setStatus(profile.status);
-        } else if (user?.displayName) {
-          setDisplayName(user.displayName);
         }
       } catch (err) {
         if (!cancelled) {
@@ -156,6 +160,14 @@ export default function TutorOnboard() {
     setError(null);
     setSavedAt(null);
 
+    if (!firstName.trim()) {
+      setError("First name is required.");
+      return;
+    }
+    if (!lastName.trim()) {
+      setError("Last name is required.");
+      return;
+    }
     if (bio.trim().length < 50) {
       setError("Bio must be at least 50 characters.");
       return;
@@ -193,7 +205,8 @@ export default function TutorOnboard() {
       }
 
       await upsertProfileCallable({
-        displayName: displayName.trim(),
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
         bio: bio.trim(),
         photoURL: finalPhotoURL,
         courses,
@@ -204,6 +217,7 @@ export default function TutorOnboard() {
       setPhotoURL(finalPhotoURL);
       setStatus("pending");
       setSavedAt(Date.now());
+      await refreshUser();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save profile");
     } finally {
@@ -212,12 +226,12 @@ export default function TutorOnboard() {
   };
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-slate-50 font-body text-slate-900">
+    <div className="flex min-h-screen w-full flex-col bg-slate-200 font-body text-slate-900">
       <Navbar />
 
       <main className="flex-1">
         <div className="mx-auto max-w-3xl px-6 py-12 md:py-16">
-          <div className="inline-flex w-fit items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-violet-700">
+          <div className="inline-flex w-fit items-center gap-2 rounded-full border border-violet-200 bg-white px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-violet-700 shadow-sm">
             <SparkleIcon className="h-3.5 w-3.5 text-violet-500" />
             <span>Tutor Profile</span>
           </div>
@@ -244,28 +258,43 @@ export default function TutorOnboard() {
           {loading ? (
             <p className="mt-10 text-sm text-slate-500">Loading your profile…</p>
           ) : (
-            <form
-              onSubmit={onSubmit}
-              className="mt-8 space-y-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8"
-            >
-              <section>
-                <h2 className="font-display text-xl font-semibold text-slate-900">
-                  About you
-                </h2>
-                <p className="mt-1 text-xs text-slate-500">
-                  Basics that appear at the top of your public profile.
-                </p>
+            <form onSubmit={onSubmit} className="mt-8 space-y-4">
 
-                <label className={`mt-5 ${labelClass}`}>
-                  Full name
-                  <input
-                    type="text"
-                    required
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    className={inputClass}
-                  />
-                </label>
+              {/* About you */}
+              <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm md:p-8">
+                <div className="border-l-[3px] border-violet-500 pl-3">
+                  <h2 className="font-display text-xl font-semibold text-slate-900">
+                    About you
+                  </h2>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    Basics that appear at the top of your public profile.
+                  </p>
+                </div>
+
+                <div className="mt-5 grid grid-cols-2 gap-4">
+                  <label className={labelClass}>
+                    First name
+                    <input
+                      type="text"
+                      required
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      placeholder="Jane"
+                      className={inputClass}
+                    />
+                  </label>
+                  <label className={labelClass}>
+                    Last name
+                    <input
+                      type="text"
+                      required
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      placeholder="Smith"
+                      className={inputClass}
+                    />
+                  </label>
+                </div>
 
                 <label className={`mt-5 ${labelClass}`}>
                   Short bio
@@ -287,7 +316,7 @@ export default function TutorOnboard() {
                 <div className="mt-5">
                   <p className={labelClass}>Profile photo</p>
                   <div className="mt-2 flex items-center gap-4">
-                    <div className="h-20 w-20 overflow-hidden rounded-full border border-slate-200 bg-slate-100">
+                    <div className="h-20 w-20 overflow-hidden rounded-full border-2 border-slate-200 bg-slate-100 shadow-sm">
                       {photoURL ? (
                         <img
                           src={photoURL}
@@ -300,7 +329,7 @@ export default function TutorOnboard() {
                         </div>
                       )}
                     </div>
-                    <label className="cursor-pointer rounded-full border border-slate-200 bg-white px-5 py-2.5 text-xs font-semibold text-slate-700 transition hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700">
+                    <label className="cursor-pointer rounded-full border border-slate-200 bg-white px-5 py-2.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700">
                       {photoURL ? "Replace photo" : "Upload photo"}
                       <input
                         type="file"
@@ -316,21 +345,22 @@ export default function TutorOnboard() {
                 </div>
               </section>
 
-              <hr className="border-slate-100" />
+              {/* Courses you teach */}              <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm md:p-8">
 
-              <section>
-                <div className="flex items-baseline justify-between">
-                  <div>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="border-l-[3px] border-violet-500 pl-3">
                     <h2 className="font-display text-xl font-semibold text-slate-900">
                       Courses you teach
                     </h2>
-                    <p className="mt-1 text-xs text-slate-500">
+                    <p className="mt-0.5 text-xs text-slate-500">
                       Pick every K–12 subject you can confidently tutor.
                     </p>
                   </div>
-                  <span className="text-xs font-medium text-violet-700">
-                    {courses.length} selected
-                  </span>
+                  {courses.length > 0 && (
+                    <span className="shrink-0 rounded-full bg-violet-600 px-2.5 py-0.5 text-xs font-semibold text-white shadow-sm">
+                      {courses.length} selected
+                    </span>
+                  )}
                 </div>
                 <div className="mt-5 space-y-5">
                   {(Object.keys(grouped) as CourseStage[]).map((stage) => (
@@ -346,10 +376,10 @@ export default function TutorOnboard() {
                               type="button"
                               key={c.id}
                               onClick={() => toggleCourse(c.id)}
-                              className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${
+                              className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium shadow-sm transition ${
                                 active
-                                  ? "border-violet-300 bg-violet-100 text-violet-800"
-                                  : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                                  ? "border-violet-500 bg-violet-600 text-white"
+                                  : "border-white/80 bg-white text-slate-600 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700"
                               }`}
                             >
                               {active && <CheckIcon className="h-3 w-3" />}
@@ -363,16 +393,17 @@ export default function TutorOnboard() {
                 </div>
               </section>
 
-              <hr className="border-slate-100" />
-
-              <section>
-                <h2 className="font-display text-xl font-semibold text-slate-900">
-                  Availability
-                </h2>
-                <p className="mt-1 text-xs text-slate-500">
-                  Toggle the days you can teach and set a typical window for
-                  each.
-                </p>
+              {/* Availability */}
+              <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm md:p-8">
+                <div className="border-l-[3px] border-violet-500 pl-3">
+                  <h2 className="font-display text-xl font-semibold text-slate-900">
+                    Availability
+                  </h2>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    Toggle the days you can teach and set a typical window for
+                    each.
+                  </p>
+                </div>
                 <div className="mt-5 space-y-2">
                   {DAYS.map((day) => {
                     const slot = availability[day];
@@ -382,7 +413,7 @@ export default function TutorOnboard() {
                         className={`flex flex-wrap items-center gap-3 rounded-xl border px-4 py-3 transition ${
                           slot.enabled
                             ? "border-violet-200 bg-violet-50/60"
-                            : "border-slate-200 bg-white"
+                            : "border-slate-200/70 bg-slate-50/60"
                         }`}
                       >
                         <label className="inline-flex w-32 cursor-pointer items-center gap-3 text-sm font-medium text-slate-800">

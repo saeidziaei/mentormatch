@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "algolia-search": {
+      "source": "davila7/claude-code-templates",
+      "sourceType": "github",
+      "skillPath": "cli-tool/components/skills/development/algolia-search/SKILL.md",
+      "computedHash": "39712659aa04c9e6b02886860678b21a99f5fe50f38afddc14426e572daeddc1"
+    },
     "developing-genkit-dart": {
       "source": "firebase/agent-skills",
       "sourceType": "github",
@@ -78,6 +84,18 @@
       "sourceType": "github",
       "skillPath": "skills/firebase-security-rules-auditor/SKILL.md",
       "computedHash": "42e793406ca8980c47fcdbd309f02838316849bcbf8475001b4ecaa6a67606b8"
+    },
+    "stripe-best-practices": {
+      "source": "stripe/ai",
+      "sourceType": "github",
+      "skillPath": "skills/stripe-best-practices/SKILL.md",
+      "computedHash": "8d1b0bfdd9fc05a4800352e4bada6c6254e421c25480c134784292fb682d6eff"
+    },
+    "stripe-webhooks": {
+      "source": "hookdeck/webhook-skills",
+      "sourceType": "github",
+      "skillPath": "skills/stripe-webhooks/SKILL.md",
+      "computedHash": "cac0f38b9bb39b6639bd3770b353c9e317eeff3fdc05a6e58bcf03475d795765"
     },
     "xcode-project-setup": {
       "source": "firebase/agent-skills",

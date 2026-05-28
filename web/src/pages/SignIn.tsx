@@ -70,6 +70,15 @@ export default function SignIn() {
               />
             </label>
 
+            <div className="mt-2 flex justify-end">
+              <Link
+                to="/forgot-password"
+                className="text-xs font-semibold text-violet-300 hover:text-violet-200"
+              >
+                Forgot password?
+              </Link>
+            </div>
+
             {error && (
               <p className="mt-4 rounded-lg border border-red-400/40 bg-red-500/10 px-3 py-2 text-xs text-red-200">
                 {error}

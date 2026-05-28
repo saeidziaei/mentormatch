@@ -5,6 +5,7 @@ import {z} from "zod";
 import {createHash, randomInt} from "crypto";
 import {FieldValue, Timestamp} from "firebase-admin/firestore";
 import {db, admin} from "./firebaseAdmin";
+import {Resend} from "resend";
 
 const REGION = "australia-southeast1";
 const RESEND_API_KEY = defineSecret("RESEND_API_KEY");
@@ -68,29 +69,24 @@ async function sendCodeEmail(
   displayName: string | null,
   apiKey: string | undefined,
 ): Promise<void> {
-  if (process.env.FUNCTIONS_EMULATOR === "true" || !apiKey) {
-    logger.info(`[dev] Verification code for ${to}: ${code}`);
+  if (!apiKey) {
+    logger.info(`[dev] Verification code for xyz ${to}: ${code}`);
     return;
   }
-  const resp = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: FROM_EMAIL,
-      to,
-      subject: "Your Mentormatch verification code",
-      html: buildEmailHtml(code, displayName),
-      text:
-        `Your Mentormatch verification code is ${code}. ` +
-        "It expires in 10 minutes.",
-    }),
+
+  const resend = new Resend(apiKey);
+  const {error} = await resend.emails.send({
+    from: FROM_EMAIL,
+    to,
+    subject: "Your Mentormatch verification code",
+    html: buildEmailHtml(code, displayName),
+    text:
+      `Your Mentormatch verification code is ${code}. ` +
+      "It expires in 10 minutes.",
   });
-  if (!resp.ok) {
-    const body = await resp.text();
-    logger.error("Resend send failed", {status: resp.status, body});
+
+  if (error) {
+    logger.error("Resend send failed", error);
     throw new HttpsError(
       "internal",
       "Couldn't send the verification email. Please try again.",
@@ -155,12 +151,14 @@ export const requestSignupCode = onCall(
       createdAt: FieldValue.serverTimestamp(),
     });
 
+    logger.info(`Generated verification code for ${email} (displayName: ${displayName ?? "none"})`);
     let apiKey: string | undefined;
     try {
       apiKey = RESEND_API_KEY.value();
     } catch {
-      apiKey = undefined;
+      apiKey = process.env.RESEND_API_KEY;
     }
+    logger.info(`[dev] apiKey source: ${apiKey ? "found" : "undefined"}`);
     await sendCodeEmail(email, code, displayName ?? null, apiKey);
 
     return {ok: true};

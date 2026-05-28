@@ -23,7 +23,6 @@ export default function SignUp() {
   const from = (location.state as { from?: string } | null)?.from || "/tutor/onboard";
 
   const [step, setStep] = useState<Step>("details");
-  const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [code, setCode] = useState<string[]>(Array(6).fill(""));
@@ -54,7 +53,7 @@ export default function SignUp() {
     }
     setSubmitting(true);
     try {
-      await requestSignupCode(email.trim(), displayName.trim() || undefined);
+      await requestSignupCode(email.trim());
       setStep("code");
       setResendIn(RESEND_COOLDOWN_SECS);
       setCode(Array(6).fill(""));
@@ -75,12 +74,7 @@ export default function SignUp() {
     }
     setSubmitting(true);
     try {
-      await verifySignupAndSignIn(
-        email.trim(),
-        joined,
-        password,
-        displayName.trim() || undefined,
-      );
+      await verifySignupAndSignIn(email.trim(), joined, password);
       navigate(from, { replace: true });
     } catch (err) {
       setError(friendlyError(err, "Verification failed. Try again."));
@@ -94,7 +88,7 @@ export default function SignUp() {
     setError(null);
     setSubmitting(true);
     try {
-      await requestSignupCode(email.trim(), displayName.trim() || undefined);
+      await requestSignupCode(email.trim());
       setResendIn(RESEND_COOLDOWN_SECS);
       setCode(Array(6).fill(""));
       codeRefs.current[0]?.focus();
@@ -172,17 +166,6 @@ export default function SignUp() {
               className="mt-8 rounded-2xl border border-white/10 bg-white/[0.06] p-6 shadow-2xl backdrop-blur-sm"
             >
               <label className="block text-xs font-semibold uppercase tracking-wider text-white/70">
-                Full name
-                <input
-                  type="text"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="Jane Smith"
-                  className="mt-2 w-full rounded-lg border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none transition focus:border-violet-400/60 focus:bg-white/10"
-                />
-              </label>
-
-              <label className="mt-4 block text-xs font-semibold uppercase tracking-wider text-white/70">
                 Email
                 <input
                   type="email"
